@@ -14,8 +14,6 @@
     <a href="#run">run</a>
     <span> · </span>
     <a href="#nodes">I/O</a>
-    <span> · </span>
-    <a href="#motivation-and-under-the-hood">motivation</a>
 </h3>
 
 `fsm_lo` is a ROS package written in C++ that provides LIDAR odometry from measurements of a single panoramic 2D LIDAR sensor, that is: a sensor whose field of view is 360 degrees. `fsm_lo` is the ROS wrapper of [`fsm`](https://github.com/li9i/fsm).
