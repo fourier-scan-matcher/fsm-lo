@@ -154,7 +154,7 @@ Found in `config/params.yaml`:
 | `xy_bound`               | Axis-wise radius for randomly generating a new initial position estimate in case of recovery                      | 0.2           |
 | `t_bound`                | Angular-wise radius for randomly generating a new initial orientation estimate in case of recovery                | π/4           |
 | `max_counter`            | Lower values decrease execution time                                                                              | 200           |
-| `max_recoveries`         | Ditto                                                                                                             | 10            |
+| `max_recoveries`         | Lower values decrease execution time                                                                              | 10            |
 
 #### Transforms published
 
