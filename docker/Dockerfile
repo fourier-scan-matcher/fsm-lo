@@ -52,5 +52,4 @@ RUN echo "source /home/${USER}/catkin_ws/devel/setup.bash" >> /home/${USER}/fsm_
 RUN echo "roslaunch fsm_lo avanti.launch"                  >> /home/${USER}/fsm_launch.sh
 RUN chmod +x /home/${USER}/fsm_launch.sh
 # ------------------------------------------------------------------------------
-USER root
 ENTRYPOINT bash /home/${USER}/fsm_launch.sh

@@ -13,4 +13,4 @@ services:
     ipc: host
     user: fsmlo
     volumes:
-      - ../fsmlo:/home/fsmlo/catkin_ws/src/fsmlo/:rw
+      - ../fsm_lo:/home/fsmlo/catkin_ws/src/fsm_lo/:rw
