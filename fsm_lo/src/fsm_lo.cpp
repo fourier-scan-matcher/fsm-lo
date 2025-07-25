@@ -19,7 +19,8 @@ FSMLO::FSMLO(ros::NodeHandle nh, ros::NodeHandle nh_private) :
   M(Eigen::Matrix3d::Identity()),
   path_estimate_msg_(nav_msgs::Path())
 {
-  ROS_INFO("[FSM_LO] Init-ing...");
+  nh_private_.param<std::string>("pkg_name", PKG_NAME, "FSM_LO");
+  ROS_INFO("[%s] Initialising ...", PKG_NAME.c_str());
 
   /* init params */
   initParams();
@@ -30,7 +31,7 @@ FSMLO::FSMLO(ros::NodeHandle nh, ros::NodeHandle nh_private) :
   /* cache fftw plans for efficiency of execution */
   cacheFFTW3Plans(SIZE_SCAN);
 
-  ROS_INFO("[%s] Init-ed.",                                   PKG_NAME.c_str());
+  ROS_INFO("[%s] Inititialised.",                             PKG_NAME.c_str());
   ROS_INFO("[%s] To start production of lidar odometry issue",PKG_NAME.c_str());
   ROS_INFO("%*s rosservice call /fsm_lo/start", (int)(PKG_NAME.size()+2),"");
 }
@@ -94,8 +95,6 @@ FSMLO::initParams()
   /* getParam does not recognise unsigned int */
   int int_param;
 
-  /* ------------------------------------------------------------------------ */
-  nh_private_.param<std::string>("pkg_name", PKG_NAME, "FSM_LO");
   /* ------------------------------------------------------------------------ */
   if (!nh_private_.getParam ("scan_topic", scan_topic_))
   {
