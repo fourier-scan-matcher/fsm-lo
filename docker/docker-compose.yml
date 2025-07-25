@@ -1,21 +1,16 @@
 services:
-
-  fsm:
-
+  fsmlo:
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: docker/Dockerfile
 
     image: li9i/fsm-lo:latest
-
     container_name: fsm_lo_container
 
     stdin_open: true
     tty: true
     network_mode: "host"
     ipc: host
-
-    environment:
-      - DISPLAY=${DISPLAY}
-
-    user: ${USERNAME:-user_fsm}
+    user: fsmlo
+    volumes:
+      - ../fsmlo:/home/fsmlo/catkin_ws/src/fsmlo/:rw
