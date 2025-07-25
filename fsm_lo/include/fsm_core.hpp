@@ -1,7 +1,14 @@
+/*
+ * fsm - [IROS'22] Obtain robust odometry from your noisy panoramic 2D LIDAR
+ *
+ * Copyright (c) 2022 Alexandros PHILOTHEOU
+ *
+ * Licensed under the MIT License.
+ * See LICENSE.MIT for details.
+ */
 #ifndef FSM_H
 #define FSM_H
 
-// --- INCLUDES ----------------------------------------------------------------
 #include <memory>
 #include <signal.h>
 #include <cmath>
@@ -35,7 +42,6 @@
 #include <CGAL/Min_ellipse_2_traits_2.h>
 #include <eigen3/Eigen/Geometry>
 
-// --- TYPEDEFs ----------------------------------------------------------------
 typedef CGAL::Exact_predicates_inexact_constructions_kernel Kernel;
 typedef Kernel::Point_2                       Point_2;
 typedef Kernel::Vector_2                      Vector_2;
@@ -45,10 +51,8 @@ typedef CGAL::Min_ellipse_2_traits_2<Kernel>  Traits;
 typedef CGAL::Min_ellipse_2<Traits>           Min_ellipse;
 
 
-// --- FSM ---------------------------------------------------------------------
-namespace FSM
-{
-
+namespace FSM {
+/* ========================================================================== */
 struct input_params
 {
   unsigned int num_iterations;
@@ -59,7 +63,7 @@ struct input_params
   unsigned int max_magnification_size;
   unsigned int max_recoveries;
 };
-
+/* ========================================================================== */
 struct output_params
 {
   double exec_time;
@@ -71,10 +75,10 @@ struct output_params
   unsigned int num_recoveries;
   std::vector< std::tuple<double,double,double> > trajectory;
 
-  // Rotation criterion
+  /* Rotation criterion */
   double rc;
 
-  // Translation criterion
+  /* Translation criterion */
   double tc;
 
   output_params()
@@ -90,9 +94,7 @@ struct output_params
     tc = 0;
   };
 };
-
-
-// -----------------------------------------------------------------------------
+/* ========================================================================== */
 class X
 {
   public:
@@ -137,7 +139,7 @@ class X
 
       double tan_t_ray = tan(t_ray);
       bool tan_peligro = false;
-      //if (fabs(fabs(t_ray) - M_PI/2) == 0.0)
+      /* if (fabs(fabs(t_ray) - M_PI/2) == 0.0) */
       if (fabs(fabs(t_ray) - M_PI/2) < 0.0001)
         tan_peligro = true;
 
@@ -146,10 +148,10 @@ class X
 
       for (int l = 0; l < lines.size(); l++)
       {
-        // The index of the first sensed point
+        /* The index of the first sensed point */
         int idx_1 = l;
 
-        // The index of the second sensed point (in counter-clockwise order)
+        /* The index of the second sensed point (in counter-clockwise order) */
         int idx_2 = idx_1 + 1;
 
 
@@ -180,7 +182,7 @@ class X
 
           if (det_3 * det_4 <= 0.0)
           {
-            // They intersect!
+            /* They intersect! */
 
             double x = 0.0;
             double y = 0.0;
@@ -188,10 +190,10 @@ class X
             double ttp_x = lines[idx_2].first - lines[idx_1].first;
             double ttp_y = lines[idx_2].second - lines[idx_1].second;
 
-            // The line segment is perpendicular to the x-axis
+            /* The line segment is perpendicular to the x-axis */
             if (ttp_x == 0.0)
             {
-              // The ray is parallel to the x-axis
+              /* The ray is parallel to the x-axis */
               if (x_far == px)
               {
                 x = lines[idx_1].first;
@@ -218,7 +220,7 @@ class X
               {
                 x = px;
                 y = lines[idx_1].second + tan_two_points * (x - lines[idx_1].first);
-                //y = (lines[idx_2].second + lines[idx_1].second)/2;
+                /* y = (lines[idx_2].second + lines[idx_1].second)/2; */
               }
             }
 
@@ -262,7 +264,7 @@ class X
   }
 
 
-  /*******************************************************************************
+  /*****************************************************************************
    */
   static std::vector< std::pair<double,double> > findExact2(
     const std::tuple<double,double,double>& pose,
@@ -296,7 +298,7 @@ class X
 
       double tan_t_ray = tan(t_ray);
       bool tan_peligro = false;
-      //if (fabs(fabs(t_ray) - M_PI/2) == 0.0)
+      /* if (fabs(fabs(t_ray) - M_PI/2) == 0.0) */
       if (fabs(fabs(t_ray) - M_PI/2) < 0.0001)
         tan_peligro = true;
 
@@ -306,13 +308,15 @@ class X
       bool success = false;
       int inc = lines.size()/16;
 
-      // Start off with the first ray. Scan the whole `lines` vector and find
-      // the index of the segment the first ray hits. This index becomes the
-      // starting index from which the second ray shall start searching. The last
-      // segment the second ray shall end at is defined by `inc`. And do this
-      // for all rays.
-      // IF there is no intersection between [start, start+inc] then start from
-      // start+inc and go up to start+2inc... and do this until you find a hit.
+      /*
+       * Start off with the first ray. Scan the whole `lines` vector and find
+       * the index of the segment the first ray hits. This index becomes the
+       * starting index from which the second ray shall start searching. The last
+       * segment the second ray shall end at is defined by `inc`. And do this
+       * for all rays.
+       * IF there is no intersection between [start, start+inc] then start from
+       * start+inc and go up to start+2inc... and do this until you find a hit.
+       */
       while(!success)
       {
         success = findExactOneRay(px,py,tan_t_ray, x_far,y_far,lines,
@@ -360,10 +364,10 @@ class X
 
     for (int l = start_search_id; l < end_search_id; l++)
     {
-      // The index of the first sensed point
+      /* The index of the first sensed point */
       int idx_1 = l;
 
-      // The index of the second sensed point (in counter-clockwise order)
+      /* The index of the second sensed point (in counter-clockwise order) */
       int idx_2 = idx_1 + 1;
 
       if (idx_2 >= lines.size())
@@ -392,7 +396,7 @@ class X
 
         if (det_3 * det_4 <= 0.0)
         {
-          // They intersect!
+          /* They intersect! */
 
           double x = 0.0;
           double y = 0.0;
@@ -400,10 +404,10 @@ class X
           double ttp_x = lines[idx_2].first - lines[idx_1].first;
           double ttp_y = lines[idx_2].second - lines[idx_1].second;
 
-          // The line segment is perpendicular to the x-axis
+          /* The line segment is perpendicular to the x-axis */
           if (ttp_x == 0.0)
           {
-            // The ray is parallel to the x-axis
+            /* The ray is parallel to the x-axis */
             if (x_far == px)
             {
               x = lines[idx_1].first;
@@ -430,7 +434,7 @@ class X
             {
               x = px;
               y = lines[idx_1].second + tan_two_points * (x - lines[idx_1].first);
-              //y = (lines[idx_2].second + lines[idx_1].second)/2;
+              /* y = (lines[idx_2].second + lines[idx_1].second)/2; */
             }
           }
 
@@ -466,14 +470,12 @@ class X
     else
       return false;
   }
-
 };
 
-// -----------------------------------------------------------------------------
+/* ========================================================================== */
 class Utils
 {
   public:
-
 
   /*****************************************************************************
   */
@@ -485,13 +487,13 @@ class Utils
     double dy = std::get<1>(d);
     double dt = std::get<2>(d);
 
-    // Translation matrix
+    /* Translation matrix */
     Eigen::Matrix3d T;
     T = Eigen::Matrix3d::Identity();
     T(0,2) = dx;
     T(1,2) = dy;
 
-    // Rotation matrix
+    /* Rotation matrix */
     Eigen::Matrix3d R;
     R = Eigen::Matrix3d::Identity();
     R(0,0) = +cosf(dt);
@@ -499,7 +501,7 @@ class Utils
     R(1,0) = +sin(dt);
     R(1,1) = +cosf(dt);
 
-    // Compute the new transform matrix
+    /* Compute the new transform matrix */
     Eigen::Matrix3d M_;
     M_ = M * T * R;
 
@@ -619,18 +621,20 @@ class Utils
     std::uniform_real_distribution<double> distribution_y(-dxy, dxy);
     std::uniform_real_distribution<double> distribution_t(-dt, dt);
 
-    // A temp real pose
+    /* A temp real pose */
     std::tuple<double,double,double> real_pose_ass;
 
-    // Fill in the orientation regardless
+    /* Fill in the orientation regardless */
     double rt = distribution_t(generator_t);
     std::get<2>(real_pose_ass) = std::get<2>(base_pose) + rt;
     double t = std::get<2>(real_pose_ass);
     Utils::wrapAngle(&t);
     std::get<2>(real_pose_ass) = t;
 
-    // We assume that the lidar sensor is distanced from the closest obstacle
-    // by a certain amount (e.g. the radius of a circular base)
+    /*
+     * We assume that the lidar sensor is distanced from the closest obstacle
+     * by a certain amount (e.g. the radius of a circular base)
+     */
     bool pose_found = false;
     while (!pose_found)
     {
@@ -660,7 +664,7 @@ class Utils
 
     *real_pose = real_pose_ass;
 
-    // Verify distance threshold
+    /* Verify distance threshold */
     std::vector< std::pair<double,double> > intersections =
       X::find(real_pose_ass, map, map.size());
     std::vector<double> real_scan;
@@ -679,19 +683,19 @@ class Utils
     const double& dist_threshold,
     std::tuple<double,double,double>* pose)
   {
-    // A temp real pose
+    /* A temp real pose */
     std::tuple<double,double,double> real_pose_ass;
 
-    // Generate orientation
+    /* Generate orientation */
     std::random_device rand_dev_t;
     std::mt19937 generator_t(rand_dev_t());
 
     std::uniform_real_distribution<double> distribution_t(-M_PI, M_PI);
 
-    // Fill in the orientation regardless
+    /* Fill in the orientation regardless */
     std::get<2>(real_pose_ass) = distribution_t(generator_t);
 
-    // Find the bounding box of the map
+    /* Find the bounding box of the map */
     double max_x = -1000.0;
     double min_x = +1000.0;
     double max_y = -1000.0;
@@ -720,8 +724,10 @@ class Utils
     std::uniform_real_distribution<double> distribution_x(min_x, max_x);
     std::uniform_real_distribution<double> distribution_y(min_y, max_y);
 
-    // We assume that the lidar sensor is distanced from the closest obstacle
-    // by a certain amount (e.g. the radius of a circular base)
+    /*
+     * We assume that the lidar sensor is distanced from the closest obstacle
+     * by a certain amount (e.g. the radius of a circular base)
+     */
     bool pose_found = false;
     while (!pose_found)
     {
@@ -751,7 +757,7 @@ class Utils
 
     *pose = real_pose_ass;
 
-    // Verify distance threshold
+    /* Verify distance threshold */
     std::vector< std::pair<double,double> > intersections =
       X::find(real_pose_ass, map, map.size());
     std::vector<double> real_scan;
@@ -825,7 +831,7 @@ class Utils
   {
     Point_2 point(std::get<0>(pose), std::get<1>(pose));
 
-    // Construct polygon from map
+    /* Construct polygon from map */
     Polygon_2 poly;
     for (int p = 0; p < map.size(); p++)
       poly.push_back(Point_2(map[p].first, map[p].second));
@@ -994,7 +1000,7 @@ class Utils
     double py = std::get<1>(pose);
     double pt = std::get<2>(pose);
 
-    // The angle of the first ray (in the local coordinate system)
+    /* The angle of the first ray (in the local coordinate system) */
     double sa = -angle_span/2;
 
     for (int i = 0; i < scan.size(); i++)
@@ -1050,11 +1056,11 @@ class Utils
     std::get<1>(zero_pose) = 0.0;
     std::get<2>(zero_pose) = 0.0;
 
-    // Turn scan to points
+    /* Turn scan to points */
     std::vector< std::pair<double,double> > scan_points;
     scan2points(scan_in, zero_pose, &scan_points);
 
-    // scan_out: the ranges to `scan_points` from `zero_pose`
+    /* scan_out: the ranges to `scan_points` from `zero_pose` */
     std::vector<double> scan_out;
     scanFromPose(zero_pose, scan_points, sz, &scan_out);
 
@@ -1098,11 +1104,10 @@ class Utils
   {
     *angle = fmod(*angle + 5*M_PI, 2*M_PI) - M_PI;
   }
-
 };
 
 
-// -----------------------------------------------------------------------------
+/* ========================================================================== */
 class DatasetUtils
 {
   public:
@@ -1146,7 +1151,7 @@ class DatasetUtils
       return polygons;
     }
 
-  /***************************************************************************
+  /*****************************************************************************
   */
   static void dataset2rangesAndPose(
     const char* dataset_filepath,
@@ -1163,9 +1168,11 @@ class DatasetUtils
     std::vector<double>* ranges,
     std::tuple<double,double,double>* pose)
   {
-    // First read the first two number: they show
-    // (1) the number of scans and
-    // (2) the number of rays per scan.
+    /*
+     * First read the first two number: they show
+     * (1) the number of scans and
+     * (2) the number of rays per scan.
+     */
     FILE* fp = fopen(filepath, "r");
     if (fp == NULL)
       exit(EXIT_FAILURE);
@@ -1191,29 +1198,29 @@ class DatasetUtils
       free(line);
 
 
-    // Begin for all scans
+    /* Begin for all scans */
     fp = fopen(filepath, "r");
     line = NULL;
     len = 0;
 
-    // The line number read at each iteration
+    /* The line number read at each iteration */
     line_number = 0;
 
-    // loop
+    /* loop */
     while ((getline(&line, &len, fp)) != -1)
     {
       line_number++;
 
-      // We don't have to care about the first line now
+      /* We don't have to care about the first line now */
       if (line_number == 1)
         continue;
 
-      // These lines host the poses from which the scans were taken
+      /* These lines host the poses from which the scans were taken */
       if ((line_number-1) % (num_rays+1) == 0)
       {
-        // The pose from which the scan_number-th scan was taken
-        std::string pose_d(line); // convert from char to string
-        std::string::size_type sz; // alias of size_t
+        /* The pose from which the scan_number-th scan was taken */
+        std::string pose_d(line);  /* convert from char to string */
+        std::string::size_type sz;  /* alias of size_t */
 
         double px = std::stod(pose_d,&sz);
         pose_d = pose_d.substr(sz);
@@ -1225,7 +1232,7 @@ class DatasetUtils
         continue;
       }
 
-      // At this point we are in a line holding a range measurement; fo sho
+      /* At this point we are in a line holding a range measurement; fo sho */
       double range_d;
       assert(sscanf(line, "%lf", &range_d) == 1);
       ranges->push_back(range_d);
@@ -1242,7 +1249,7 @@ class DatasetUtils
   static std::vector<double>
   interpolateRanges( const std::vector<double>& ranges)
   {
-    // Identify contiguous regions of zero measurement
+    /* Identify contiguous regions of zero measurement */
     std::vector< std::vector <int> > regions;
     int i = 0;
     int j;
@@ -1281,8 +1288,7 @@ class DatasetUtils
         i++;
     }
 
-
-    // Inflate to consecutive indices
+    /* Inflate to consecutive indices */
     for (unsigned int i = 0; i < regions.size(); i++)
     {
       int begin = regions[i][0];
@@ -1294,9 +1300,7 @@ class DatasetUtils
         regions[i].push_back(j);
     }
 
-
-
-    // Is the first index 0 and the last equal to the size-1?
+    /* Is the first index 0 and the last equal to the size-1? */
     int num_regions = regions.size();
     int numel_last_region = regions[num_regions-1].size();
 
@@ -1310,14 +1314,14 @@ class DatasetUtils
     }
 
     /*
-       for (int i = 0; i < regions.size(); i++)
-       {
-       printf("region %d\n", i);
-       for (int j = 0; j < regions[i].size(); j++)
-       printf("%d,", regions[i][j]);
-       printf("\n");
-       }
-       */
+     * for (int i = 0; i < regions.size(); i++)
+     * {
+     * printf("region %d\n", i);
+     * for (int j = 0; j < regions[i].size(); j++)
+     * printf("%d,", regions[i][j]);
+     * printf("\n");
+     * }
+     */
 
     std::vector<double> ranges_interp = ranges;
 
@@ -1341,9 +1345,9 @@ class DatasetUtils
     }
 
     /*
-       for (int j = 0; j < ranges.size(); j++)
-       printf("%f\n", ranges_interp[j]);
-       */
+     * for (int j = 0; j < ranges.size(); j++)
+     * printf("%f\n", ranges_interp[j]);
+     */
 
     return ranges_interp;
   }
@@ -1355,9 +1359,11 @@ class DatasetUtils
     std::vector< std::vector<double> >* ranges,
     std::vector< std::tuple<double,double,double> >* poses)
   {
-    // First read the first two number: they show
-    // (1) the number of scans and
-    // (2) the number of rays per scan.
+    /*
+     * First read the first two number: they show
+     * (1) the number of scans and
+     * (2) the number of rays per scan.
+     */
     FILE* fp = fopen(filepath, "r");
     if (fp == NULL)
       exit(EXIT_FAILURE);
@@ -1383,38 +1389,38 @@ class DatasetUtils
       free(line);
 
 
-    // Begin for all scans
+    /* Begin for all scans */
     fp = fopen(filepath, "r");
     line = NULL;
     len = 0;
 
-    // The line number read at each iteration
+    /* The line number read at each iteration */
     line_number = 0;
 
-    // A vector holding scan ranges for one scan
+    /* A vector holding scan ranges for one scan */
     std::vector<double> ranges_one_scan;
 
-    // loop
+    /* loop */
     while ((getline(&line, &len, fp)) != -1)
     {
       line_number++;
 
-      // We don't have to care about the first line now
+      /* We don't have to care about the first line now */
       if (line_number == 1)
         continue;
 
-      // These lines host the poses from which the scans were taken
+      /* These lines host the poses from which the scans were taken */
       if ((line_number-1) % (num_rays+1) == 0)
       {
-        // Finished with this scan
+        /* Finished with this scan */
         ranges->push_back(ranges_one_scan);
 
-        // Clear the vector so we can begin all over
+        /* Clear the vector so we can begin all over */
         ranges_one_scan.clear();
 
-        // The pose from which the scan_number-th scan was taken
-        std::string pose(line); // convert from char to string
-        std::string::size_type sz; // alias of size_t
+        /* The pose from which the scan_number-th scan was taken */
+        std::string pose(line);  /* convert from char to string */
+        std::string::size_type sz;  /* alias of size_t */
 
         double px = std::stod(pose,&sz);
         pose = pose.substr(sz);
@@ -1426,7 +1432,7 @@ class DatasetUtils
         continue;
       }
 
-      // At this point we are in a line holding a range measurement; fo sho
+      /* At this point we are in a line holding a range measurement; fo sho */
       double range;
       assert(sscanf(line, "%lf", &range) == 1);
       ranges_one_scan.push_back(range);
@@ -1437,7 +1443,6 @@ class DatasetUtils
     if (line)
       free(line);
   }
-
 
   /****************************************************************************
   */
@@ -1463,7 +1468,7 @@ class DatasetUtils
 };
 
 
-// -----------------------------------------------------------------------------
+/* ========================================================================== */
 class Dump
 {
   public:
@@ -1700,7 +1705,7 @@ class Dump
 
 };
 
-// -----------------------------------------------------------------------------
+/* ========================================================================== */
 class ScanCompletion
 {
   public:
@@ -1728,7 +1733,7 @@ class ScanCompletion
     for (int i = scan_copy.size()-2; i > 0; i--)
       scan->push_back(scan_copy[i]);
 
-    // Rotate so that it starts from -M_PI rather than -M_PI / 2
+    /* Rotate so that it starts from -M_PI rather than -M_PI / 2 */
     int num_pos = scan->size() / 4;
 
     std::rotate(scan->begin(),
@@ -1743,7 +1748,7 @@ class ScanCompletion
   {
     std::vector<double> scan_copy = *scan;
 
-    // Locate the first and last points of the scan in the 2D plane
+    /* Locate the first and last points of the scan in the 2D plane */
     std::vector< std::pair<double,double> > points;
     Utils::scan2points(scan_copy, pose, &points);
     std::pair<double,double> start_point = points[0];
@@ -1757,7 +1762,7 @@ class ScanCompletion
     for (int i = scan_copy.size()-2; i > 0; i--)
       scan->push_back(r);
 
-    // Rotate so that it starts from -M_PI rather than -M_PI / 2
+    /* Rotate so that it starts from -M_PI rather than -M_PI / 2 */
     int num_pos = scan->size() / 4;
 
     std::rotate(scan->begin(),
@@ -1774,7 +1779,7 @@ class ScanCompletion
     for (int i = 1; i < scan_copy.size()-1; i++)
       scan->push_back(scan_copy[i]);
 
-    // Rotate so that it starts from -M_PI rather than -M_PI / 2
+    /* Rotate so that it starts from -M_PI rather than -M_PI / 2 */
     int num_pos = scan->size() / 4;
 
     std::rotate(scan->begin(),
@@ -1786,7 +1791,7 @@ class ScanCompletion
   */
   static void completeScan4(std::vector<double>* scan)
   {
-    // Find closest and furthest points in original scan
+    /* Find closest and furthest points in original scan */
     double min_range = *std::min_element(scan->begin(), scan->end());
     double max_range = *std::max_element(scan->begin(), scan->end());
     double fill_range = min_range;
@@ -1796,7 +1801,7 @@ class ScanCompletion
     for (int i = 1; i < scan_size-1; i++)
       scan->push_back(fill_range);
 
-    // Rotate so that it starts from -M_PI rather than -M_PI / 2
+    /* Rotate so that it starts from -M_PI rather than -M_PI / 2 */
     assert(fmod(scan->size(), 2) == 0);
     int num_pos = scan->size() / 4;
 
@@ -1841,7 +1846,7 @@ class ScanCompletion
 };
 
 
-// -----------------------------------------------------------------------------
+/* ========================================================================== */
 class DFTUtils
 {
   public:
@@ -1887,28 +1892,30 @@ class DFTUtils
       std::chrono::high_resolution_clock::now();
 #endif
 
-    // A vector holding the coefficients of the DFT
+    /* A vector holding the coefficients of the DFT */
     std::vector<double> dft_coeff_vector;
 
-    // Do the DFT thing
+    /* Do the DFT thing */
     std::vector<double> dft_coeffs = dft(rays_diff);
 
-    // The real and imaginary part of the first coefficient are
-    // out[1] and out[N-1] respectively
+    /*
+     * The real and imaginary part of the first coefficient are
+     * out[1] and out[N-1] respectively
+     */
 
-    // The real part of the first coefficient
+    /* The real part of the first coefficient */
     double x1_r = dft_coeffs[1];
 
-    // The imaginary part of the first coefficient
+    /* The imaginary part of the first coefficient */
     double x1_i = dft_coeffs[rays_diff.size()-1];
 
-    // Is x1_r finite?
+    /* Is x1_r finite? */
     if (std::isfinite(x1_r))
       dft_coeff_vector.push_back(x1_r);
     else
       dft_coeff_vector.push_back(0.0);
 
-    // Is x1_i finite?
+    /* Is x1_i finite? */
     if (std::isfinite(x1_i))
       dft_coeff_vector.push_back(x1_i);
     else
@@ -1938,28 +1945,30 @@ class DFTUtils
       std::chrono::high_resolution_clock::now();
 #endif
 
-    // A vector holding the coefficients of the DFT
+    /* A vector holding the coefficients of the DFT */
     std::vector<double> dft_coeff_vector;
 
-    // Do the DFT thing
+    /* Do the DFT thing */
     std::vector<double> dft_coeffs = dft(rays_diff, r2rp);
 
-    // The real and imaginary part of the first coefficient are
-    // out[1] and out[N-1] respectively
+    /*
+     * The real and imaginary part of the first coefficient are
+     * out[1] and out[N-1] respectively
+     */
 
-    // The real part of the first coefficient
+    /* The real part of the first coefficient */
     double x1_r = dft_coeffs[1];
 
-    // The imaginary part of the first coefficient
+    /* The imaginary part of the first coefficient */
     double x1_i = dft_coeffs[rays_diff.size()-1];
 
-    // Is x1_r finite?
+    /* Is x1_r finite? */
     if (std::isfinite(x1_r))
       dft_coeff_vector.push_back(x1_r);
     else
       dft_coeff_vector.push_back(0.0);
 
-    // Is x1_i finite?
+    /* Is x1_i finite? */
     if (std::isfinite(x1_i))
       dft_coeff_vector.push_back(x1_i);
     else
@@ -2024,7 +2033,7 @@ class DFTUtils
   /*****************************************************************************
    * @brief Performs DFT in a vector of doubles via fftw. Returns the DFT
    * coefficients vector in the order described in
-   * http://www.fftw.org/fftw3_doc/Real_002dto_002dReal-Transform-Kinds.html#Real_002dto_002dReal-Transform-Kinds.
+   * http://www.fftw.org/fftw3_doc/Real_002dto_002dReal-Transform-Kinds.html#Real_002dto_002dReal-Transform-Kinds
    * @param[in] rays_diff [const std::vector<double>&] The vector of differences
    * in range between a world scan and a map scan.
    * @return [std::vector<double>] The vector's DFT coefficients.
@@ -2044,22 +2053,22 @@ class DFTUtils
     in = (double*) fftw_malloc(num_rays * sizeof(double));
     out = (double*) fftw_malloc(num_rays * sizeof(double));
 
-    // Create plan
+    /* Create plan */
     fftw_plan p = fftw_plan_r2r_1d(num_rays, in, out, FFTW_R2HC, FFTW_MEASURE);
 
-    // Transfer the input vector to a structure preferred by fftw
+    /* Transfer the input vector to a structure preferred by fftw */
     for (unsigned int i = 0; i < num_rays; i++)
       in[i] = rays_diff[i];
 
-    // Execute plan
+    /* Execute plan */
     fftw_execute(p);
 
-    // Store all DFT coefficients
+    /* Store all DFT coefficients */
     std::vector<double> dft_coeff_vector;
     for (unsigned int i = 0; i < num_rays; i++)
       dft_coeff_vector.push_back(out[i]);
 
-    // Free memory
+    /* Free memory */
     fftw_destroy_plan(p);
     fftw_free(out);
     fftw_free(in);
@@ -2095,24 +2104,28 @@ class DFTUtils
     in = (double*) fftw_malloc(num_rays * sizeof(double));
     out = (double*) fftw_malloc(num_rays * sizeof(double));
 
-    // Create plan
-    //fftw_plan p = fftw_plan_r2r_1d(num_rays, in, out, FFTW_R2HC, FFTW_MEASURE);
+    /*
+     * Create plan
+     * fftw_plan p = fftw_plan_r2r_1d(num_rays, in, out, FFTW_R2HC, FFTW_MEASURE);
+     */
 
-    // Transfer the input vector to a structure preferred by fftw
+    /* Transfer the input vector to a structure preferred by fftw */
     for (unsigned int i = 0; i < num_rays; i++)
       in[i] = rays_diff[i];
 
 
-    // Execute plan
+    /* Execute plan */
     fftw_execute_r2r(r2rp, in, out);
 
-    // Store all DFT coefficients
+    /* Store all DFT coefficients */
     std::vector<double> dft_coeff_vector;
     for (unsigned int i = 0; i < num_rays; i++)
       dft_coeff_vector.push_back(out[i]);
 
-    // Free memory
-    //fftw_destroy_plan(p);
+    /*
+     * Free memory
+     * fftw_destroy_plan(p);
+     */
     fftw_free(out);
     fftw_free(in);
 
@@ -2141,10 +2154,10 @@ class DFTUtils
 
     assert(scans.size() > 0);
 
-    // What will be returned
+    /* What will be returned */
     std::vector< std::vector<double> > coeff_vector_v;
 
-    // Input/output arrays for fftw
+    /* Input/output arrays for fftw */
     double* in;
     double* out;
 
@@ -2153,19 +2166,19 @@ class DFTUtils
     in = (double*) fftw_malloc(num_rays * sizeof(double));
     out = (double*) fftw_malloc(num_rays * sizeof(double));
 
-    // Create plan once
+    /* Create plan once */
     fftw_plan p = fftw_plan_r2r_1d(num_rays, in, out, FFTW_R2HC, FFTW_MEASURE);
 
     for (unsigned int v = 0; v < scans.size(); v++)
     {
-      // Transfer the input vector to a structure preferred by fftw
+      /* Transfer the input vector to a structure preferred by fftw */
       for (unsigned int i = 0; i < num_rays; i++)
         in[i] = scans[v][i];
 
-      // Execute plan with new input/output arrays
+      /* Execute plan with new input/output arrays */
       fftw_execute_r2r(p, in, out);
 
-      // Store all DFT coefficients for the v-th scan
+      /* Store all DFT coefficients for the v-th scan */
       std::vector<double> dft_coeffs;
       for (unsigned int i = 0; i < num_rays; i++)
         dft_coeffs.push_back(out[i]);
@@ -2173,11 +2186,10 @@ class DFTUtils
       coeff_vector_v.push_back(dft_coeffs);
     }
 
-    // Free memory
+    /* Free memory */
     fftw_destroy_plan(p);
     fftw_free(out);
     fftw_free(in);
-
 
 #ifdef TIMES
     std::chrono::high_resolution_clock::time_point b =
@@ -2205,10 +2217,10 @@ class DFTUtils
 
     assert(scans.size() > 0);
 
-    // What will be returned
+    /* What will be returned */
     std::vector< std::vector<double> > coeff_vector_v;
 
-    // Input/output arrays for fftw
+    /* Input/output arrays for fftw */
     double* in;
     double* out;
 
@@ -2217,19 +2229,21 @@ class DFTUtils
     in = (double*) fftw_malloc(num_rays * sizeof(double));
     out = (double*) fftw_malloc(num_rays * sizeof(double));
 
-    // Create plan once
-    //fftw_plan p = fftw_plan_r2r_1d(num_rays, in, out, FFTW_R2HC, FFTW_MEASURE);
+    /*
+     * Create plan once
+     * fftw_plan p = fftw_plan_r2r_1d(num_rays, in, out, FFTW_R2HC, FFTW_MEASURE);
+     */
 
     for (unsigned int v = 0; v < scans.size(); v++)
     {
-      // Transfer the input vector to a structure preferred by fftw
+      /* Transfer the input vector to a structure preferred by fftw */
       for (unsigned int i = 0; i < num_rays; i++)
         in[i] = scans[v][i];
 
-      // Execute plan with new input/output arrays
+      /* Execute plan with new input/output arrays */
       fftw_execute_r2r(r2rp, in, out);
 
-      // Store all DFT coefficients for the v-th scan
+      /* Store all DFT coefficients for the v-th scan */
       std::vector<double> dft_coeffs;
       for (unsigned int i = 0; i < num_rays; i++)
         dft_coeffs.push_back(out[i]);
@@ -2237,11 +2251,12 @@ class DFTUtils
       coeff_vector_v.push_back(dft_coeffs);
     }
 
-    // Free memory
-    //fftw_destroy_plan(p);
+    /*
+     * Free memory
+     * fftw_destroy_plan(p);
+     */
     fftw_free(out);
     fftw_free(in);
-
 
 #ifdef TIMES
     std::chrono::high_resolution_clock::time_point b =
@@ -2274,25 +2289,25 @@ class DFTUtils
     in = (fftw_complex*) fftw_malloc(num_rays * sizeof(fftw_complex));
     out = (double*) fftw_malloc(num_rays * sizeof(double));
 
-    // Create plan
+    /* Create plan */
     fftw_plan p = fftw_plan_dft_c2r_1d(num_rays, in, out, FFTW_MEASURE);
 
-    // Transfer the input vector to a structure preferred by fftw
+    /* Transfer the input vector to a structure preferred by fftw */
     for (unsigned int i = 0; i < num_rays; i++)
     {
       in[i][0] = rays_diff[i].first;
       in[i][1] = rays_diff[i].second;
     }
 
-    // Execute plan
+    /* Execute plan */
     fftw_execute(p);
 
-    // Store all DFT coefficients
+    /* Store all DFT coefficients */
     std::vector<double> dft_coeff_vector;
     for (unsigned int i = 0; i < num_rays; i++)
       dft_coeff_vector.push_back(out[i]/num_rays);
 
-    // Free memory
+    /* Free memory */
     fftw_destroy_plan(p);
     fftw_free(out);
     fftw_free(in);
@@ -2322,7 +2337,7 @@ class DFTUtils
 
     assert(scans.size() > 0);
 
-    // What will be returned
+    /* What will be returned */
     std::vector< std::vector<double> > dft_coeffs_v;
 
     fftw_complex* in;
@@ -2333,23 +2348,23 @@ class DFTUtils
     in = (fftw_complex*) fftw_malloc(num_rays * sizeof(fftw_complex));
     out = (double*) fftw_malloc(num_rays * sizeof(double));
 
-    // Create plan once
+    /* Create plan once */
     fftw_plan p = fftw_plan_dft_c2r_1d(num_rays, in, out, FFTW_MEASURE);
 
 
     for (unsigned int v = 0; v < scans.size(); v++)
     {
-      // Transfer the input vector to a structure preferred by fftw
+      /* Transfer the input vector to a structure preferred by fftw */
       for (unsigned int i = 0; i < num_rays; i++)
       {
         in[i][0] = scans[v][i].first;
         in[i][1] = scans[v][i].second;
       }
 
-      // Execute plan
+      /* Execute plan */
       fftw_execute_dft_c2r(p, in, out);
 
-      // Store all DFT coefficients
+      /* Store all DFT coefficients */
       std::vector<double> dft_coeffs;
       for (unsigned int i = 0; i < num_rays; i++)
         dft_coeffs.push_back(out[i]/num_rays);
@@ -2357,7 +2372,7 @@ class DFTUtils
       dft_coeffs_v.push_back(dft_coeffs);
     }
 
-    // Free memory
+    /* Free memory */
     fftw_destroy_plan(p);
     fftw_free(out);
     fftw_free(in);
@@ -2388,7 +2403,7 @@ class DFTUtils
 
     assert(scans.size() > 0);
 
-    // What will be returned
+    /* What will be returned */
     std::vector< std::vector<double> > dft_coeffs_v;
 
     fftw_complex* in;
@@ -2399,23 +2414,24 @@ class DFTUtils
     in = (fftw_complex*) fftw_malloc(num_rays * sizeof(fftw_complex));
     out = (double*) fftw_malloc(num_rays * sizeof(double));
 
-    // Create plan once
-    //fftw_plan p = fftw_plan_dft_c2r_1d(num_rays, in, out, FFTW_MEASURE);
-
+    /*
+     * Create plan once
+     * fftw_plan p = fftw_plan_dft_c2r_1d(num_rays, in, out, FFTW_MEASURE);
+     */
 
     for (unsigned int v = 0; v < scans.size(); v++)
     {
-      // Transfer the input vector to a structure preferred by fftw
+      /* Transfer the input vector to a structure preferred by fftw */
       for (unsigned int i = 0; i < num_rays; i++)
       {
         in[i][0] = scans[v][i].first;
         in[i][1] = scans[v][i].second;
       }
 
-      // Execute plan
+      /* Execute plan */
       fftw_execute_dft_c2r(c2rp, in, out);
 
-      // Store all DFT coefficients
+      /* Store all DFT coefficients */
       std::vector<double> dft_coeffs;
       for (unsigned int i = 0; i < num_rays; i++)
         dft_coeffs.push_back(out[i]/num_rays);
@@ -2423,8 +2439,10 @@ class DFTUtils
       dft_coeffs_v.push_back(dft_coeffs);
     }
 
-    // Free memory
-    //fftw_destroy_plan(p);
+    /*
+     * Free memory
+     * fftw_destroy_plan(p);
+     */
     fftw_free(out);
     fftw_free(in);
 
@@ -2443,7 +2461,7 @@ class DFTUtils
 };
 
 
-// -----------------------------------------------------------------------------
+/* ========================================================================== */
 class Translation
 {
   public:
@@ -2479,11 +2497,11 @@ class Translation
     std::vector<double> y_es;
     double norm_x1;
 
-    // Start the clock
+    /* Start the clock */
     std::chrono::high_resolution_clock::time_point start =
       std::chrono::high_resolution_clock::now();
 
-    // Iterate
+    /* Iterate */
     unsigned int it = 1;
     double inclusion_bound = 1000.0;
     double err = 1.0 / real_scan.size();
@@ -2492,12 +2510,14 @@ class Translation
 
     for (it = 1; it <= max_iterations; it++)
     {
-      // Measure the time to find intersections
+      /* Measure the time to find intersections */
       std::chrono::high_resolution_clock::time_point int_start =
         std::chrono::high_resolution_clock::now();
 
-      // Find the intersections of the rays from the estimated pose and
-      // the map.
+      /*
+       * Find the intersections of the rays from the estimated pose and
+       * the map.
+       */
       std::vector< std::pair<double,double> > virtual_scan_intersections =
         X::find(current_pose, map, real_scan.size());
 
@@ -2506,42 +2526,42 @@ class Translation
       *intersections_time =
         std::chrono::duration_cast< std::chrono::duration<double> >(int_end-int_start);
 
-      // Find the corresponding ranges
+      /* Find the corresponding ranges */
       std::vector<double> virtual_scan_it;
       Utils::points2scan(virtual_scan_intersections, current_pose, &virtual_scan_it);
 
       assert(virtual_scan_it.size() == real_scan.size());
 
-      //inclusion_bound = real_scan.size()/2*err;
-      //inclusion_bound = 0.01*sum_d;
-      //inclusion_bound = M_PI * (sum_d + err) / real_scan.size();
-      //inclusion_bound = 2*M_PI * sum_d_v / real_scan.size();
+      /*
+       * inclusion_bound = real_scan.size()/2*err;
+       * inclusion_bound = 0.01*sum_d;
+       * inclusion_bound = M_PI * (sum_d + err) / real_scan.size();
+       * inclusion_bound = 2*M_PI * sum_d_v / real_scan.size();
+       */
       inclusion_bound = real_scan.size()/4*err;
 
-      // Obtain the correction vector
+      /* Obtain the correction vector */
       std::pair<double,double> errors_xy =
         tffCore(real_scan, virtual_scan_it, std::get<2>(current_pose),
           inclusion_bound, r2rp, &d_v, &norm_x1);
 
-
-
-      // These are the corrections
+      /* These are the corrections */
       double x_e = errors_xy.first;
       double y_e = errors_xy.second;
 
 
-      // The norm of the correction vector
+      /* The norm of the correction vector */
       double err_sq = x_e*x_e + y_e*y_e;
       err = sqrt(err_sq);
 
-      // Correct the position
+      /* Correct the position */
       std::get<0>(current_pose) += x_e;
       std::get<1>(current_pose) += y_e;
 
       double dx = std::get<0>(current_pose) - std::get<0>(virtual_pose);
       double dy = std::get<1>(current_pose) - std::get<1>(virtual_pose);
 
-      // Check constraints
+      /* Check constraints */
       if(!Utils::isPositionInMap(current_pose, map))
       {
 #ifdef DEBUG
@@ -2553,14 +2573,15 @@ class Translation
         return -2.0;
       }
 
-
-      //inclusion_bound =
-      //pow(2,2)*(sum_d + err_sq)*(2*it + max_iterations) / max_iterations / real_scan.size(); 1125
-      //inclusion_bound = pow(2,2) * (sum_d + err_sq) / real_scan.size(); 1142 3436
-      //inclusion_bound = pow(2,2) * (sum_d + err) / real_scan.size(); 1144 3407
-      //inclusion_bound = pow(2,2) * sum_d / real_scan.size(); 1155 3454
-      //inclusion_bound = 0.01*sum_d; 1168 3487
-      //inclusion_bound = 100*err;
+      /*
+       * inclusion_bound =
+       * pow(2,2)*(sum_d + err_sq)*(2*it + max_iterations) / max_iterations / real_scan.size(); 1125
+       * inclusion_bound = pow(2,2) * (sum_d + err_sq) / real_scan.size(); 1142 3436
+       * inclusion_bound = pow(2,2) * (sum_d + err) / real_scan.size(); 1144 3407
+       * inclusion_bound = pow(2,2) * sum_d / real_scan.size(); 1155 3454
+       * inclusion_bound = 0.01*sum_d; 1168 3487
+       * inclusion_bound = 100*err;
+       */
 
       for (unsigned int d = 0; d < d_v.size(); d++)
         d_v[d] = fabs(d_v[d]);
@@ -2573,7 +2594,6 @@ class Translation
       printf("sum_d_v = %f\n", sum_d_v);
 #endif
 
-
       if (pick_min)
       {
         x_es.push_back(x_e);
@@ -2581,7 +2601,7 @@ class Translation
         sum_d_vs.push_back(sum_d_v);
       }
 
-      // Break if translation is negligible
+      /* Break if translation is negligible */
       double eps = 0.0000001;
       if (fabs(x_e) < eps && fabs(y_e) < eps)
         break;
@@ -2604,7 +2624,7 @@ class Translation
 
     *result_iterations= it;
 
-    // Stop the clock
+    /* Stop the clock */
     std::chrono::high_resolution_clock::time_point end =
       std::chrono::high_resolution_clock::now();
 
@@ -2637,12 +2657,12 @@ class Translation
     std::vector<double> diff;
     Utils::diffScansPerRay(real_scan, virtual_scan, inclusion_bound, &diff, d_v);
 
-    // X1
+    /* X1 */
     std::vector<double> X1 = DFTUtils::getFirstDFTCoefficient(diff, r2rp);
 
     *norm_x1 = sqrtf(X1[0]*X1[0] + X1[1]*X1[1]);
 
-    // Find the x-wise and y-wise errors
+    /* Find the x-wise and y-wise errors */
     double t = M_PI + current_t;
     std::vector<double> errors_xy = turnDFTCoeffsIntoErrors(X1, diff.size(), t);
 
@@ -2668,12 +2688,12 @@ class Translation
 
     if (num_valid_rays > 0)
     {
-      // The error in the x- direction
+      /* The error in the x- direction */
       x_err = 1.0 / num_valid_rays *
         (-dft_coeff[0] * cos(starting_angle)
          -dft_coeff[1] * sin(starting_angle));
 
-      // The error in the y- direction
+      /* The error in the y- direction */
       y_err = 1.0 / num_valid_rays *
         (-dft_coeff[0] * sin(starting_angle)
          +dft_coeff[1] * cos(starting_angle));
@@ -2689,7 +2709,7 @@ class Translation
 };
 
 
-// -----------------------------------------------------------------------------
+/* ========================================================================== */
 class Rotation
 {
 public:
@@ -2762,7 +2782,7 @@ public:
     unsigned int num_virtual_scans = pow(2,magnification_size);
     int virtual_scan_size_max = num_virtual_scans * real_scan.size();
 
-    // Measure the time to find intersections
+    /* Measure the time to find intersections */
     std::chrono::high_resolution_clock::time_point int_start =
       std::chrono::high_resolution_clock::now();
 
@@ -2777,8 +2797,10 @@ public:
     std::vector<double> virtual_scan_fine;
     Utils::points2scan(virtual_scan_points, virtual_pose, &virtual_scan_fine);
 
-    // Downsample from upper limit:
-    // construct the upper-most resolution and downsample from there.
+    /*
+     * Downsample from upper limit:
+     * construct the upper-most resolution and downsample from there.
+     */
     std::vector< std::vector< double> > virtual_scans(num_virtual_scans);
 
     for (int i = 0; i < virtual_scan_fine.size(); i++)
@@ -2787,12 +2809,14 @@ public:
       virtual_scans[k].push_back(virtual_scan_fine[i]);
     }
 
-    // Make sure that all virtual scans are equal to the real scan in terms of
-    // size
+    /*
+     * Make sure that all virtual scans are equal to the real scan in terms of
+     * size
+     */
     for (unsigned int i = 0; i < virtual_scans.size(); i++)
       assert(virtual_scans[i].size() == real_scan.size());
 
-    // The real scan's (the original) angle increment
+    /* The real scan's (the original) angle increment */
     double ang_inc = 2*M_PI / real_scan.size();
     double mul = 1.0 / num_virtual_scans;
 
@@ -2828,7 +2852,7 @@ public:
 #endif
     }
 
-    // Select some of all the angles based on criteria enforced by rankFMTOutput
+    /* Select some of all the angles based on criteria enforced by rankFMTOutput */
     std::vector<unsigned int> optimal_ids =
       rankFMTOutput(snrs, fahms, pds, 3, magnification_size, 0.00001);
 
@@ -2872,12 +2896,12 @@ public:
     fmt0Sequential(real_scan, virtual_scan, &q_0, &q_0_max_id);
 
 
-    // Calculate angle -----------------------------------------------------------
+    /* Calculate angle */
     *angle = static_cast<double>(
       (real_scan.size()-q_0_max_id))/(real_scan.size())*2*M_PI;
     Utils::wrapAngle(angle);
 
-    // Calculate SNR -------------------------------------------------------------
+    /* Calculate SNR */
     std::vector<double> q_0_background = q_0;
     q_0_background.erase(q_0_background.begin() + q_0_max_id);
 
@@ -2885,7 +2909,7 @@ public:
 
     *snr = fabs((q_0[q_0_max_id] - q_0_mmnts.first)) / q_0_mmnts.second;
 
-    // Calculate FAHM ------------------------------------------------------------
+    /* Calculate FAHM */
     unsigned int count = 0;
     for (unsigned int i = 0; i < q_0.size(); i++)
     {
@@ -2895,7 +2919,7 @@ public:
 
     *fahm = static_cast<double>(count) / q_0.size();
 
-    // Calculate PD --------------------------------------------------------------
+    /* Calculate PD */
     std::vector<double> q_ss;
     unsigned int q_ss_max_id;
     fmt0Sequential(real_scan, real_scan, &q_ss, &q_ss_max_id);
@@ -2917,40 +2941,46 @@ public:
   {
     assert(real_scan.size() == virtual_scan.size());
 
-    // Find fft of real scan
+    /* Find fft of real scan */
     std::vector<double> fft_real = DFTUtils::dft(real_scan);
-    //DFTUtils::fftshift(&fft_real);
+    /*
+     * DFTUtils::fftshift(&fft_real);
+     */
 
-    // Find fft of virtual scan
+    /* Find fft of virtual scan */
     std::vector<double> fft_virtual = DFTUtils::dft(virtual_scan);
-    //DFTUtils::fftshift(&fft_virtual);
+    /*
+     * DFTUtils::fftshift(&fft_virtual);
+     */
 
-    // fft_real is in halfcomplex format; fft_real_coeffs is in normal format
-    // (you get the full complex transform)
+    /*
+     * fft_real is in halfcomplex format; fft_real_coeffs is in normal format
+     * (you get the full complex transform)
+     */
     std::vector< std::pair<double, double> > fft_real_coeffs =
       DFTUtils::getDFTCoefficientsPairs(fft_real);
     std::vector< std::pair<double, double> > fft_virtual_coeffs =
       DFTUtils::getDFTCoefficientsPairs(fft_virtual);
 
-    // Find conjugates of real coefficients
+    /* Find conjugates of real coefficients */
     std::vector< std::pair<double, double> > fft_real_coeffs_conj =
       Utils::conjugate(fft_real_coeffs);
 
-    // The numerator of Q_0
+    /* The numerator of Q_0 */
     std::vector< std::pair<double, double> > numerator =
       Utils::innerProductComplex(fft_real_coeffs_conj, fft_virtual_coeffs);
 
-    // The denominator of Q_0
+    /* The denominator of Q_0 */
     double denominator =
       Utils::norm2(fft_real_coeffs) * Utils::norm2(fft_virtual_coeffs);
 
     /*
-       for (int i = 0; i < numerator.size(); i++)
-       {
-       numerator[i].first /= denominator;
-       numerator[i].second /= denominator;
-       }
-       */
+     * for (int i = 0; i < numerator.size(); i++)
+     * {
+     * numerator[i].first /= denominator;
+     * numerator[i].second /= denominator;
+     * }
+     */
 
     std::vector< std::pair<double, double> > Q_0 = numerator;
 
@@ -2966,17 +2996,17 @@ public:
     std::vector<double>* q_0,
     unsigned int* q_0_max_id)
   {
-    // Find fft of real scan
+    /* Find fft of real scan */
     std::vector<double> fft_real = DFTUtils::dft(real_scan);
 
     std::vector< std::pair<double, double> > fft_real_coeffs =
       DFTUtils::getDFTCoefficientsPairs(fft_real);
 
-    // Find conjugates of real coefficients
+    /* Find conjugates of real coefficients */
     std::vector< std::pair<double, double> > fft_real_coeffs_conj =
       Utils::conjugate(fft_real_coeffs);
 
-    // The numerator of Q_0
+    /* The numerator of Q_0 */
     std::vector< std::pair<double, double> > numerator =
       Utils::innerProductComplex(fft_real_coeffs_conj, fft_real_coeffs);
 
@@ -3018,7 +3048,7 @@ public:
     unsigned int num_virtual_scans = pow(2,magnification_size);
     int virtual_scan_size_max = num_virtual_scans * real_scan.size();
 
-    // Measure the time to find intersections
+    /* Measure the time to find intersections */
     std::chrono::high_resolution_clock::time_point int_start =
       std::chrono::high_resolution_clock::now();
 
@@ -3033,8 +3063,10 @@ public:
     std::vector<double> virtual_scan_fine;
     Utils::points2scan(virtual_scan_points, virtual_pose, &virtual_scan_fine);
 
-    // Downsample from upper limit:
-    // construct the upper-most resolution and downsample from there.
+    /*
+     * Downsample from upper limit:
+     * construct the upper-most resolution and downsample from there.
+     */
     std::vector< std::vector< double> > virtual_scans(num_virtual_scans);
 
     for (int i = 0; i < virtual_scan_fine.size(); i++)
@@ -3043,17 +3075,21 @@ public:
       virtual_scans[k].push_back(virtual_scan_fine[i]);
     }
 
-    // Make sure that all virtual scans are equal to the real scan in terms of
-    // size
+    /*
+     * Make sure that all virtual scans are equal to the real scan in terms of
+     * size
+     */
     for (unsigned int i = 0; i < virtual_scans.size(); i++)
       assert(virtual_scans[i].size() == real_scan.size());
 
-    // The real scan's (the original) angle increment
+    /* The real scan's (the original) angle increment */
     double ang_inc = 2*M_PI / real_scan.size();
     double mul = 1.0 / num_virtual_scans;
 
-    // Compute the angles and metrics of matching the real scan against each and
-    // all virtual scans
+    /*
+     * Compute the angles and metrics of matching the real scan against each and
+     * all virtual scans
+     */
     std::vector<double> un_angles;
     std::vector<double> snrs;
     std::vector<double> fahms;
@@ -3062,8 +3098,10 @@ public:
     fmt1Batch(real_scan, virtual_scans, r2rp, c2rp,
       &un_angles, &snrs, &fahms, &pds);
 
-    // Correct the angles returned to get the proper pose from which each
-    // virtual scan was taken (needed due to over-sampling the map)
+    /*
+     * Correct the angles returned to get the proper pose from which each
+     * virtual scan was taken (needed due to over-sampling the map)
+     */
     std::vector<double> angles;
     for (unsigned int a = 0; a < num_virtual_scans; a++)
     {
@@ -3073,7 +3111,7 @@ public:
       angles.push_back(angle_a);
     }
 
-    // Select some of all the angles based on criteria enforced by rankFMTOutput
+    /* Select some of all the angles based on criteria enforced by rankFMTOutput */
     std::vector<unsigned int> optimal_ids =
       rankFMTOutput(snrs, fahms, pds, 3, magnification_size, 0.00001);
 
@@ -3118,7 +3156,7 @@ public:
     std::vector< unsigned int > q_0_max_id_v;
     fmt0Batch(real_scan, virtual_scans, r2rp, c2rp, &q_0_v, &q_0_max_id_v);
 
-    // Calculate PD --------------------------------------------------------------
+    /* Calculate PD */
     std::vector<double> q_ss;
     unsigned int q_ss_max_id;
     fmt0AutoSequential(real_scan, &q_ss, &q_ss_max_id);
@@ -3129,19 +3167,19 @@ public:
 
     for (unsigned int i = 0; i < virtual_scans.size(); i++)
     {
-      // Calculate angle ---------------------------------------------------------
+      /* Calculate angle */
       double angle = static_cast<double>(
         (real_scan.size()-q_0_max_id_v[i]))/(real_scan.size())*2*M_PI;
       Utils::wrapAngle(&angle);
 
       angles->push_back(angle);
 
-      // Calculate pd ------------------------------------------------------------
+      /* Calculate pd */
       double pd = 2*q_0_v[i][q_0_max_id_v[i]]
         / (q_ss[q_ss_max_id] + q_rr_v[i][q_rr_max_id_v[i]]);
       pds->push_back(pd);
 
-      // Calculate SNR -----------------------------------------------------------
+      /* Calculate SNR */
       std::vector<double> q_0_background = q_0_v[i];
       q_0_background.erase(q_0_background.begin() + q_0_max_id_v[i]);
 
@@ -3151,7 +3189,7 @@ public:
         fabs((q_0_v[i][q_0_max_id_v[i]] - q_0_mmnts.first)) / q_0_mmnts.second;
       snrs->push_back(snr);
 
-      // Calculate FAHM ----------------------------------------------------------
+      /* Calculate FAHM */
       unsigned int count = 0;
       for (unsigned int f = 0; f < q_0_v[i].size(); f++)
       {
@@ -3176,19 +3214,21 @@ public:
     assert(virtual_scans.size() > 0);
     assert(real_scan.size() == virtual_scans[0].size());
 
-    // Find fft of real scan
+    /* Find fft of real scan */
     std::vector<double> fft_real = DFTUtils::dft(real_scan);
 
-    // Find fft of virtual scan
+    /* Find fft of virtual scan */
     std::vector< std::vector<double> > fft_virtuals =
       DFTUtils::dftBatch(virtual_scans, r2rp);
 
-    // fft_real is in halfcomplex format; fft_real_coeffs is in normal format
-    // (you get the full complex transform)
+    /*
+     * fft_real is in halfcomplex format; fft_real_coeffs is in normal format
+     * (you get the full complex transform)
+     */
     std::vector< std::pair<double, double> > fft_real_coeffs =
       DFTUtils::getDFTCoefficientsPairs(fft_real);
 
-    // Find conjugates of real coefficients
+    /* Find conjugates of real coefficients */
     std::vector< std::pair<double, double> > fft_real_coeffs_conj =
       Utils::conjugate(fft_real_coeffs);
 
@@ -3198,20 +3238,20 @@ public:
       std::vector< std::pair<double, double> > fft_virtual_coeffs =
         DFTUtils::getDFTCoefficientsPairs(fft_virtuals[i]);
 
-      // The numerator of Q_0
+      /* The numerator of Q_0 */
       std::vector< std::pair<double, double> > numerator =
         Utils::innerProductComplex(fft_real_coeffs_conj, fft_virtual_coeffs);
 
       /*
-      // The denominator of Q_0
-      double denominator =
-      Utils::norm2(fft_real_coeffs) * Utils::norm2(fft_virtual_coeffs);
+       * / * The denominator of Q_0 * /
+       * double denominator =
+       * Utils::norm2(fft_real_coeffs) * Utils::norm2(fft_virtual_coeffs);
 
-      for (int i = 0; i < numerator.size(); i++)
-      {
-      numerator[i].first /= denominator;
-      numerator[i].second /= denominator;
-      }
+       * for (int i = 0; i < numerator.size(); i++)
+       * {
+       * numerator[i].first /= denominator;
+       * numerator[i].second /= denominator;
+       * }
       */
 
       Q_0_v.push_back(numerator);
@@ -3239,7 +3279,7 @@ public:
   {
     assert(virtual_scans.size() > 0);
 
-    // Find fft of virtual scan
+    /* Find fft of virtual scan */
     std::vector< std::vector<double> > fft_virtuals =
       DFTUtils::dftBatch(virtual_scans, r2rp);
 
@@ -3247,15 +3287,15 @@ public:
 
     for (unsigned int i = 0; i < virtual_scans.size(); i++)
     {
-      // Virtual scan dft coefficients
+      /* Virtual scan dft coefficients */
       std::vector< std::pair<double, double> > fft_virtual_coeffs =
         DFTUtils::getDFTCoefficientsPairs(fft_virtuals[i]);
 
-      // Virtual scan dft coefficients conjugates
+      /* Virtual scan dft coefficients conjugates */
       std::vector< std::pair<double, double> > fft_virtual_coeffs_conj =
         Utils::conjugate(fft_virtual_coeffs);
 
-      // The numerator of Q_0
+      /* The numerator of Q_0 */
       std::vector< std::pair<double, double> > numerator =
         Utils::innerProductComplex(fft_virtual_coeffs_conj, fft_virtual_coeffs);
 
@@ -3274,7 +3314,6 @@ public:
     }
   }
 
-
   /*****************************************************************************
   */
   static std::vector<unsigned int> rankFMTOutput(
@@ -3290,31 +3329,32 @@ public:
     assert (pd_threshold >= 0);
     assert (method >= 0 && method <= 3);
 
-    // Return the indices of those angles for which criteria are near
-    // the maximum criterion
+    /*
+     * Return the indices of those angles for which criteria are near
+     * the maximum criterion
+     */
     std::vector<unsigned int> best_ids;
 
-    // Simply the one please
+    /* Simply the one please */
     if (method == 0)
     {
-      // What are the criteria for ranking angles?
+      /* What are the criteria for ranking angles? */
       std::vector<double> criteria = pd;
 
-      // Identify maximum criterion
+      /* Identify maximum criterion */
       double max_c = *std::max_element(criteria.begin(), criteria.end());
 
       best_ids.push_back(
         std::max_element(criteria.begin(), criteria.end()) -criteria.begin());
-
     }
 
-    // The one + those within pd_threshold around it
+    /* The one + those within pd_threshold around it */
     if (method == 1)
     {
-      // What are the criteria for ranking angles?
+      /* What are the criteria for ranking angles? */
       std::vector<double> criteria = pd;
 
-      // Identify maximum criterion
+      /* Identify maximum criterion */
       double max_c = *std::max_element(criteria.begin(), criteria.end());
 
       for (unsigned int i = 0; i < criteria.size(); i++)
@@ -3324,13 +3364,13 @@ public:
       }
     }
 
-    // The one + those within (max critetia - min crtieria)/2
+    /* The one + those within (max critetia - min crtieria)/2 */
     if (method == 2)
     {
-      // What are the criteria for ranking angles?
+      /* What are the criteria for ranking angles? */
       std::vector<double> criteria = pd;
 
-      // Identify maximum criterion
+      /* Identify maximum criterion */
       double max_c = *std::max_element(criteria.begin(), criteria.end());
       double min_c = *std::min_element(criteria.begin(), criteria.end());
 
@@ -3342,15 +3382,14 @@ public:
       }
     }
 
-    // Pick `pick_num_surr` around max criterion every time
+    /* Pick `pick_num_surr` around max criterion every time */
     std::set<unsigned int> best_ids_set;
     if (method == 3)
     {
-      // What are the criteria for ranking angles?
+      /* What are the criteria for ranking angles? */
       std::vector<double> criteria = pd;
 
-
-      // Identify maximum criterion
+      /* Identify maximum criterion */
       int max_c_idx =
         std::max_element(criteria.begin(), criteria.end()) - criteria.begin();
       double max_c = criteria[max_c_idx];
@@ -3373,7 +3412,6 @@ public:
       if (vendalia_method == 2)
         pick_num_surr = 4;
 
-
       for (int i =  -pick_num_surr + max_c_idx;
         i <= +pick_num_surr + max_c_idx; i++)
       {
@@ -3395,12 +3433,12 @@ public:
       }
 
       /*
-         for (unsigned int i = 0; i < criteria.size(); i++)
-         {
-         if (fabs(criteria[i]-max_c) <= pd_threshold)
-         best_ids_set.insert(i);
-         }
-         */
+       * for (unsigned int i = 0; i < criteria.size(); i++)
+       * {
+       * if (fabs(criteria[i]-max_c) <= pd_threshold)
+       * best_ids_set.insert(i);
+       * }
+       */
 
       for (std::set<unsigned int>::iterator it = best_ids_set.begin();
         it != best_ids_set.end(); it++) best_ids.push_back(*it);
@@ -3416,11 +3454,10 @@ public:
 
     return best_ids;
   }
-
 };
 
 
-// -----------------------------------------------------------------------------
+/* ========================================================================== */
 class Match
 {
   public:
@@ -3476,42 +3513,44 @@ class Match
 
     *result_pose = virtual_pose;
 
-    // Maximum counter value means a new recovery attempt
+    /* Maximum counter value means a new recovery attempt */
     int min_counter = 0;
     int max_counter = ip.max_counter;
     int counter = min_counter;
 
-    // By a factor of what do you need to over-sample angularly?
+    /* By a factor of what do you need to over-sample angularly? */
     unsigned int min_magnification_size = ip.min_magnification_size;
     unsigned int max_magnification_size = ip.max_magnification_size;
     unsigned int current_magnification_size = min_magnification_size;
 
-    // How many times do I attempt recovery?
+    /* How many times do I attempt recovery? */
     unsigned int num_recoveries = 0;
     unsigned int max_recoveries = ip.max_recoveries;
 
-    // These three vectors hold the trajectory for each iteration
+    /* These three vectors hold the trajectory for each iteration */
     std::vector<double> xs;
     std::vector<double> ys;
     std::vector<double> ts;
 
-    // Two rotation criteria
+    /* Two rotation criteria */
     std::vector<double> rc0_v;
     std::vector<double> rc1_v;
 
-    // One translation criterion
+    /* One translation criterion */
     std::vector<double> tc_v;
 
     std::vector<double> dxys;
     std::chrono::duration<double> intersections_time;
 
-    // The best candidate angle found at each iterations is stored and made a
-    // candidate each time. Its criterion is its translation criterion after
-    // ni-1 translations
+    /*
+     * The best candidate angle found at each iterations is stored and made a
+     * candidate each time. Its criterion is its translation criterion after
+     * ni-1 translations
+     */
     double best_cand_angle = 0.0;
     double best_min_tc = 100000.0;
 
-    // A lock for going overdrive when the rotation criterion is near-excellent
+    /* A lock for going overdrive when the rotation criterion is near-excellent */
     bool up_lock = false;
     int total_iterations = 0;
     int num_iterations = 0;
@@ -3523,9 +3562,9 @@ class Match
       printf("counter                    = %d ---\n", counter);
 #endif
 
-      // -------------------------------------------------------------------------
-      // -------------------------------------------------------------------------
-      // ------------------ Rotation correction phase ----------------------------
+      /*
+       * ----------------- Rotation correction phase ---------------------------
+       */
       std::vector<double> rc0;
       std::vector<double> rc1;
       std::vector<double> cand_angles;
@@ -3561,14 +3600,14 @@ class Match
       if (!ca_exists)
         cand_angles.push_back(best_cand_angle);
 
-      // ------------------ Candidate angles sifting -----------------------------
+      /* ---------------- Candidate angles sifting -------------------------- */
       unsigned int min_tc_idx = 0;
       if (cand_angles.size() > 1)
       {
         std::vector<double> tcs_sift;
         for (unsigned int ca = 0; ca < cand_angles.size(); ca++)
         {
-          // How many test iterations?
+          /* How many test iterations? */
           unsigned int ni = 2;
           int tr_i = 0;
 
@@ -3603,13 +3642,14 @@ class Match
             tcs_sift.push_back(tc);
         }
 
-        // The index of the angle with the least translation criterion
+        /* The index of the angle with the least translation criterion */
         min_tc_idx =
           std::min_element(tcs_sift.begin(), tcs_sift.end()) - tcs_sift.begin();
 
-
-        // Check if the newly-found angle is the angle with the least
-        // translation criterion so far
+        /*
+         * Check if the newly-found angle is the angle with the least
+         * translation criterion so far
+         */
         if (tcs_sift[min_tc_idx] < best_min_tc)
         {
           best_min_tc = tcs_sift[min_tc_idx];
@@ -3620,17 +3660,19 @@ class Match
       rc0_v.push_back(rc0[min_tc_idx]);
       rc1_v.push_back(rc1[min_tc_idx]);
 
-      // Update the current orientation estimate with the angle that sports the
-      // least translation criterion overall
+      /*
+       * Update the current orientation estimate with the angle that sports the
+       * least translation criterion overall
+       */
       std::get<2>(*result_pose) += cand_angles[min_tc_idx];
       Utils::wrapAngle(&std::get<2>(*result_pose));
 
-      // ... and store it
+      /* ... and store it */
       ts.push_back(std::get<2>(*result_pose));
 
-      // -------------------------------------------------------------------------
-      // -------------------------------------------------------------------------
-      // ---------------- Translation correction phase ---------------------------
+      /*
+       * ---------------- Translation correction phase -------------------------
+       */
       num_iterations =
         (current_magnification_size+1)*ip.num_iterations;
 
@@ -3680,10 +3722,10 @@ class Match
 #endif
 
 
-      // ----------------------- Recovery modes ----------------------------------
+      /* --------------------- Recovery modes ------------------------------- */
       bool l2_recovery = false;
 
-      // Perilous pose at exterior of map's bounds detected
+      /* Perilous pose at exterior of map's bounds detected */
       if (tc_v.back() == -2.0)
       {
 #if defined (DEBUG)
@@ -3692,20 +3734,20 @@ class Match
         l2_recovery = true;
       }
 
-      // Do not allow more than `max_counter` iterations per resolution
+      /* Do not allow more than `max_counter` iterations per resolution */
       if (counter > max_counter)
       {
 #if defined (DEBUG)
         printf("Will trigger recovery due to condition 4\n");
 #endif
-        //l2_recovery = true;
+        /* l2_recovery = true; */
 
         counter = 0;
         current_magnification_size++;
       }
 
 
-      // Recover if need be
+      /* Recover if need be */
       if (l2_recovery)
       {
         if (num_recoveries > max_recoveries)
@@ -3726,7 +3768,7 @@ class Match
       {
         counter++;
 
-        // -------------------------- Level-up -------------------------------------
+        /* -------------------------- Level-up ------------------------------ */
         double xy_eps = 10.1;
         double t_eps = 0.00001;
         if (canGiveNoMore(xs,ys,ts, xy_eps, t_eps) && counter > min_counter)
@@ -3744,7 +3786,6 @@ class Match
 
     std::chrono::duration<double> elapsed =
       std::chrono::duration_cast< std::chrono::duration<double> >(end-start);
-
 
 #if defined (TIMES)
     printf("%f [Match::fmt]\n", elapsed.count());
@@ -3777,9 +3818,6 @@ class Match
     while(!Utils::generatePose(input_pose, map,
         1*xy_bound, t_bound, 0.0, output_pose));
   }
-
 };
-
-};
-
+}
 #endif

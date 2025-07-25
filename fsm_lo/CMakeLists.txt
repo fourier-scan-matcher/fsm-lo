@@ -36,7 +36,7 @@ INCLUDE_DIRECTORIES(include
 
 # ------------------------------------------------------------------------------
 # sm
-add_library(fsm_lo src/fsm.cpp)
+add_library(fsm_lo src/fsm_lo.cpp)
 target_link_libraries(fsm_lo
   fftw3
   CGAL::CGAL_Core
@@ -45,14 +45,14 @@ add_dependencies(fsm_lo
   ${catkin_EXPORTED_TARGETS})
 # ------------------------------------------------------------------------------
 # The executable
-add_executable(fsm_node
-  src/fsm_node.cpp)
+add_executable(fsm_lo_node
+  src/fsm_lo_node.cpp)
 
-target_link_libraries(fsm_node
+target_link_libraries(fsm_lo_node
   fsm_lo
   ${catkin_LIBRARIES})
 
-add_dependencies(fsm_node
+add_dependencies(fsm_lo_node
   ${catkin_EXPORTED_TARGETS}
 )
 # ------------------------------------------------------------------------------

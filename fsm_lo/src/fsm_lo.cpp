@@ -1,4 +1,12 @@
-#include <fsm.h>
+/*
+ * fsm - [IROS'22] Obtain robust odometry from your noisy panoramic 2D LIDAR
+ *
+ * Copyright (c) 2022 Alexandros PHILOTHEOU
+ *
+ * Licensed under the MIT License.
+ * See LICENSE.MIT for details.
+ */
+#include <fsm_lo.hpp>
 
 /*******************************************************************************
 */
@@ -13,20 +21,19 @@ FSMLO::FSMLO(ros::NodeHandle nh, ros::NodeHandle nh_private) :
 {
   ROS_INFO("[FSM_LO] Init-ing...");
 
-  // init params
+  /* init params */
   initParams();
 
-  // init publishers, subscribers, and services
+  /* init publishers, subscribers, and services */
   initPSS();
 
-  // cache fftw plans for efficiency of execution
+  /* cache fftw plans for efficiency of execution */
   cacheFFTW3Plans(SIZE_SCAN);
 
   ROS_INFO("[%s] Init-ed.",                                   PKG_NAME.c_str());
   ROS_INFO("[%s] To start production of lidar odometry issue",PKG_NAME.c_str());
   ROS_INFO("%*s rosservice call /fsm_lo/start", (int)(PKG_NAME.size()+2),"");
 }
-
 
 /*******************************************************************************
 */
@@ -35,13 +42,12 @@ FSMLO::~FSMLO()
   printf("[%s] Destroying FSMLO\n", PKG_NAME.c_str());
 }
 
-
 /*******************************************************************************
 */
 void
 FSMLO::cacheFFTW3Plans(const unsigned int& sz)
 {
-  // Create forward  plan
+  /* Create forward  plan */
   double* r2r_in;
   double* r2r_out;
 
@@ -50,7 +56,7 @@ FSMLO::cacheFFTW3Plans(const unsigned int& sz)
 
   r2rp_ = fftw_plan_r2r_1d(sz, r2r_in, r2r_out, FFTW_R2HC, FFTW_MEASURE);
 
-  // Create backward plan
+  /* Create backward plan */
   fftw_complex* c2r_in;
   double* c2r_out;
 
@@ -59,7 +65,6 @@ FSMLO::cacheFFTW3Plans(const unsigned int& sz)
 
   c2rp_ = fftw_plan_dft_c2r_1d(sz, c2r_in, c2r_out, FFTW_MEASURE);
 }
-
 
 /*******************************************************************************
 */
@@ -81,43 +86,38 @@ FSMLO::extractYawFromPose(const geometry_msgs::Pose& pose)
   return yaw;
 }
 
-
 /*******************************************************************************
 */
   void
 FSMLO::initParams()
 {
-  // getParam does not recognise unsigned int
+  /* getParam does not recognise unsigned int */
   int int_param;
 
-  // ---------------------------------------------------------------------------
+  /* ------------------------------------------------------------------------ */
   nh_private_.param<std::string>("pkg_name", PKG_NAME, "FSM_LO");
-
-  // ---------------------------------------------------------------------------
+  /* ------------------------------------------------------------------------ */
   if (!nh_private_.getParam ("scan_topic", scan_topic_))
   {
     ROS_WARN("[%s] no scan_topic param found; resorting to defaults",
       PKG_NAME.c_str());
     scan_topic_ = "/base_scan";
   }
-
-  // ---------------------------------------------------------------------------
+  /* ------------------------------------------------------------------------ */
   if (!nh_private_.getParam ("initial_pose_topic", initial_pose_topic_))
   {
     ROS_WARN("[%s] no initial_pose_topic param found; resorting to defaults",
       PKG_NAME.c_str());
     initial_pose_topic_ = "/fsm_lo/initial_pose";
   }
-
-  // ---------------------------------------------------------------------------
+  /* ------------------------------------------------------------------------ */
   if (!nh_private_.getParam ("pose_estimate_topic", pose_estimate_topic_))
   {
     ROS_WARN("[%s] no pose_estimate_topic param found; resorting to defaults",
       PKG_NAME.c_str());
     initial_pose_topic_ = "/fsm_lo/pose_estimate";
   }
-
-  // ---------------------------------------------------------------------------
+  /* ------------------------------------------------------------------------ */
   if (!nh_private_.getParam ("path_estimate_topic", path_estimate_topic_))
   {
     ROS_WARN("[%s] no path_estimate_topic param found; resorting to defaults",
@@ -125,15 +125,14 @@ FSMLO::initParams()
     path_estimate_topic_ = "/fsm_lo/path_estimate";
 
   }
-  // ---------------------------------------------------------------------------
+  /* ------------------------------------------------------------------------ */
   if (!nh_private_.getParam ("lo_topic", lo_topic_))
   {
     ROS_WARN("[%s] no lo_topic param found; resorting to defaults",
       PKG_NAME.c_str());
     lo_topic_ = "/fsm_lo/lo";
   }
-
-  // ---------------------------------------------------------------------------
+  /* ------------------------------------------------------------------------ */
   if (!nh_private_.getParam ("size_scan", int_param))
   {
     ROS_WARN("[%s] no size_scan param found; resorting to defaults",
@@ -142,32 +141,28 @@ FSMLO::initParams()
   }
   else
     SIZE_SCAN = static_cast<unsigned int>(int_param);
-
-  // ---------------------------------------------------------------------------
+  /* ------------------------------------------------------------------------ */
   if (!nh_private_.getParam ("global_frame_id", global_frame_id_))
   {
     ROS_WARN("[%s] no global_frame_id param found; resorting to defaults",
       PKG_NAME.c_str());
     global_frame_id_ = "/map";
   }
-
-  // ---------------------------------------------------------------------------
+  /* ------------------------------------------------------------------------ */
   if (!nh_private_.getParam ("base_frame_id", base_frame_id_))
   {
     ROS_WARN("[%s] no base_frame_id param found; resorting to defaults",
       PKG_NAME.c_str());
     base_frame_id_ = "/base_laser_link";
   }
-
-  // ---------------------------------------------------------------------------
+  /* ------------------------------------------------------------------------ */
   if (!nh_private_.getParam ("lo_frame_id", lo_frame_id_))
   {
     ROS_WARN("[%s] no lo_frame_id param found; resorting to defaults",
       PKG_NAME.c_str());
     lo_frame_id_ = "/lo";
   }
-
-  // ---------------------------------------------------------------------------
+  /* ------------------------------------------------------------------------ */
   if (!nh_private_.getParam ("num_iterations", int_param))
   {
     ROS_WARN("[%s] no num_iterations param found; resorting to defaults",
@@ -176,24 +171,21 @@ FSMLO::initParams()
   }
   else
     ip_.num_iterations = static_cast<unsigned int>(int_param);
-
-  // ---------------------------------------------------------------------------
+  /* ------------------------------------------------------------------------ */
   if (!nh_private_.getParam ("xy_bound", ip_.xy_bound))
   {
     ROS_WARN("[%s] no xy_bound param found; resorting to defaults",
       PKG_NAME.c_str());
     ip_.xy_bound = 0.2;
   }
-
-  // ---------------------------------------------------------------------------
+  /* ------------------------------------------------------------------------ */
   if (!nh_private_.getParam ("t_bound", ip_.t_bound))
   {
     ROS_WARN("[%s] no t_bound param found; resorting to defaults",
       PKG_NAME.c_str());
     ip_.t_bound = M_PI/4;
   }
-
-  // ---------------------------------------------------------------------------
+  /* ------------------------------------------------------------------------ */
   if (!nh_private_.getParam ("max_counter", int_param))
   {
     ROS_WARN("[%s] no max_counter param found; resorting to defaults",
@@ -202,8 +194,7 @@ FSMLO::initParams()
   }
   else
     ip_.max_counter = static_cast<unsigned int>(int_param);
-
-  // ---------------------------------------------------------------------------
+  /* ------------------------------------------------------------------------ */
   if (!nh_private_.getParam ("min_magnification_size", int_param))
   {
     ROS_WARN("[%s] no min_magnification_size param found; resorting to defaults",
@@ -212,8 +203,7 @@ FSMLO::initParams()
   }
   else
     ip_.min_magnification_size = static_cast<unsigned int>(int_param);
-
-  // ---------------------------------------------------------------------------
+  /* ------------------------------------------------------------------------ */
   if (!nh_private_.getParam ("max_magnification_size", int_param))
   {
     ROS_WARN("[%s] no max_magnification_size param found; resorting to defaults",
@@ -222,8 +212,7 @@ FSMLO::initParams()
   }
   else
     ip_.max_magnification_size = static_cast<unsigned int>(int_param);
-
-  // ---------------------------------------------------------------------------
+  /* ------------------------------------------------------------------------ */
   if (!nh_private_.getParam ("max_recoveries", int_param))
   {
     ROS_WARN("[%s] no max_recoveries param found; resorting to defaults",
@@ -243,59 +232,55 @@ FSMLO::initParams()
   assert(ip_.max_recoveries >= 0);
 }
 
-
 /*******************************************************************************
 */
 void
 FSMLO::initPSS()
 {
-  // The subscriber to the input scans topic
-  scan_sub_ =
-    nh_.subscribe(scan_topic_, 1, &FSMLO::scanCallback, this);
+  /* The subscriber to the input scans topic */
+  scan_sub_ = nh_.subscribe(scan_topic_, 1, &FSMLO::scanCallback, this);
 
-  // Clearing the estimated trajectory service
+  /* Clearing the estimated trajectory service */
   clear_trajectory_service_ = nh_.advertiseService(
     "fsm_lo/clear_estimated_trajectory", &FSMLO::serviceClearTrajectory, this);
 
-  // Initial pose setting service
+  /* Initial pose setting service */
   set_initial_pose_service_ = nh_.advertiseService(
     "fsm_lo/set_initial_pose", &FSMLO::serviceInitialPose, this);
 
-  // Start service
+  /* Start service */
   start_service_= nh_.advertiseService(
     "fsm_lo/start", &FSMLO::serviceStart, this);
 
-  // Stop service
+  /* Stop service */
   stop_service_= nh_.advertiseService(
     "fsm_lo/stop", &FSMLO::serviceStop, this);
 
-  // fsm's lo publisher
+  /* fsm's lo publisher */
   lo_pub_ = nh_.advertise<nav_msgs::Odometry>(lo_topic_, 1);
 
-  // fsm's pose estimate
+  /* fsm's pose estimate */
   pose_estimate_pub_ =
     nh_.advertise<geometry_msgs::PoseStamped>(pose_estimate_topic_, 1);
 
-  // fsm's path estimate
+  /* fsm's path estimate */
   path_estimate_pub_ =
     nh_.advertise<nav_msgs::Path>(path_estimate_topic_, 1);
 }
-
 
 /*******************************************************************************
 */
   void
 FSMLO::publishLO(const std::tuple<double,double,double>& diff)
 {
-  // Transform -----------------------------------------------------------------
+  /* Transform */
   publishLOTransform(diff);
 
-  // Messages ------------------------------------------------------------------
+  /* Messages */
   publishLOMessage(diff);
   publishLOPoseMessage();
   publishLOPathMessage();
 }
-
 
 /*******************************************************************************
  * Construct /lo_frame_id <- /base_frame_id odometry message and publish it
@@ -303,22 +288,22 @@ FSMLO::publishLO(const std::tuple<double,double,double>& diff)
 void
 FSMLO::publishLOMessage(const std::tuple<double,double,double>& diff)
 {
-  // Header
+  /* Header */
   nav_msgs::Odometry lo_msg;
   lo_msg.header.seq = sc_;
   lo_msg.header.stamp = tr_;
   lo_msg.header.frame_id = lo_frame_id_;
   lo_msg.child_frame_id = base_frame_id_;
 
-  // Pose
+  /* Pose */
   geometry_msgs::PoseWithCovariance lo_pose_msg;
   lo_pose_msg.pose = retypePose(diff);
 
-  // Pose covariance---no estimate on it whatsoever
+  /* Pose covariance---no estimate on it whatsoever */
   boost::array<double, 36> cov = {};
   lo_pose_msg.covariance = cov;
 
-  // Velocity
+  /* Velocity */
   geometry_msgs::TwistWithCovariance lo_twist_msg;
   lo_twist_msg.twist.linear.x = std::get<0>(diff) / (tr_-tv_).toSec();
   lo_twist_msg.twist.linear.y = std::get<1>(diff) / (tr_-tv_).toSec();
@@ -331,10 +316,9 @@ FSMLO::publishLOMessage(const std::tuple<double,double,double>& diff)
   lo_msg.pose  = lo_pose_msg;
   lo_msg.twist = lo_twist_msg;
 
-  // Publish the lo message
+  /* Publish the lo message */
   lo_pub_.publish(lo_msg);
 }
-
 
 /*******************************************************************************
  * The total path estimate with respect to the global frame
@@ -345,14 +329,13 @@ FSMLO::publishLOPathMessage()
   geometry_msgs::PoseStamped pose_msg =
     retypePoseStamped(path_estimate_.back(), global_frame_id_);
 
-  // Construct trajectory estimate message and publish it
+  /* Construct trajectory estimate message and publish it */
   path_estimate_msg_.header.seq = sc_;
   path_estimate_msg_.header.stamp = tr_;
   path_estimate_msg_.header.frame_id = global_frame_id_;
   path_estimate_msg_.poses.push_back(pose_msg);
   path_estimate_pub_.publish(path_estimate_msg_);
 }
-
 
 /*******************************************************************************
  * The current pose estimate with respect to the global frame
@@ -366,26 +349,25 @@ FSMLO::publishLOPoseMessage()
   pose_estimate_pub_.publish(pose_msg);
 }
 
-
 /*******************************************************************************
  * Construct /lo_frame_id <- /base_frame_id transform and publish it
  */
 void
 FSMLO::publishLOTransform(const std::tuple<double,double,double>& diff)
 {
-  // The transform msg
+  /* The transform msg */
   geometry_msgs::TransformStamped tfStamped;
   tfStamped.header.seq = sc_;
   tfStamped.header.stamp = tr_;
   tfStamped.header.frame_id = lo_frame_id_;
   tfStamped.child_frame_id = base_frame_id_;
 
-  // Set translation
+  /* Set translation */
   tfStamped.transform.translation.x = std::get<0>(diff);
   tfStamped.transform.translation.y = std::get<1>(diff);
   tfStamped.transform.translation.z = 0.0;
 
-  // Set rotation
+  /* Set rotation */
   tf2::Quaternion q;
   q.setRPY(0,0, std::get<2>(diff));
   tfStamped.transform.rotation.x = q.x();
@@ -393,10 +375,9 @@ FSMLO::publishLOTransform(const std::tuple<double,double,double>& diff)
   tfStamped.transform.rotation.z = q.z();
   tfStamped.transform.rotation.w = q.w();
 
-  // Publish transform
+  /* Publish transform */
   lo_tf_.sendTransform(tfStamped);
 }
-
 
 /*******************************************************************************
 */
@@ -411,7 +392,6 @@ FSMLO::retypeScan(const sensor_msgs::LaserScan::Ptr& scan_msg)
   return ret_vector;
 }
 
-
 /*******************************************************************************
 */
   geometry_msgs::Pose
@@ -419,12 +399,12 @@ FSMLO::retypePose(const std::tuple<double,double,double>& pose)
 {
   geometry_msgs::Pose pose_msg;
 
-  // Set position
+  /* Set position */
   pose_msg.position.x = std::get<0>(pose);
   pose_msg.position.y = std::get<1>(pose);
   pose_msg.position.z = 0.0;
 
-  // Set orientation
+  /* Set orientation */
   tf::Quaternion q;
   q.setRPY(0.0, 0.0, std::get<2>(pose));
   q.normalize();
@@ -432,7 +412,6 @@ FSMLO::retypePose(const std::tuple<double,double,double>& pose)
 
   return pose_msg;
 }
-
 
 /*******************************************************************************
 */
@@ -445,12 +424,11 @@ FSMLO::retypePoseStamped(const std::tuple<double,double,double>& pose,
   posestamped_msg.header.stamp = tr_;
   posestamped_msg.header.frame_id = frame_id;
 
-  // Set pose
+  /* Set pose */
   posestamped_msg.pose = retypePose(pose);
 
   return posestamped_msg;
 }
-
 
 /*******************************************************************************
  *
@@ -469,7 +447,6 @@ bool FSMLO::serviceClearTrajectory(
   return true;
 }
 
-
 /*******************************************************************************
  * If there is an initial pose then set it
  */
@@ -480,7 +457,7 @@ bool FSMLO::serviceInitialPose(
   boost::shared_ptr<geometry_msgs::PoseWithCovarianceStamped const> pose_msg_shared;
   geometry_msgs::PoseWithCovarianceStamped pose_msg;
 
-  // Take only one message from `initial_pose_topic_`
+  /* Take only one message from `initial_pose_topic_` */
   pose_msg_shared =
     ros::topic::waitForMessage<geometry_msgs::PoseWithCovarianceStamped>(
       initial_pose_topic_);
@@ -514,7 +491,6 @@ bool FSMLO::serviceInitialPose(
   }
 }
 
-
 /*******************************************************************************
  *
  */
@@ -529,7 +505,6 @@ bool FSMLO::serviceStart(
 
   return true;
 }
-
 
 /*******************************************************************************
  *
@@ -546,7 +521,6 @@ bool FSMLO::serviceStop(
   return true;
 }
 
-
 /*******************************************************************************
 */
   void
@@ -558,14 +532,16 @@ FSMLO::scanCallback(const sensor_msgs::LaserScan::Ptr& scan_msg)
     return;
   }
 
-  // New scan received
+  /* New scan received */
   sc_++;
 
-  // This is the first scan received; one is nothing
+  /* This is the first scan received; one is nothing */
   if (sc_ <= 1)
   {
-    // Make scan_msg into a vector<double>, remove zero ranges, and subsample
-    // to SIZE_SCAN elements
+    /*
+     * Make scan_msg into a vector<double>, remove zero ranges, and subsample
+     * to SIZE_SCAN elements
+     */
     sv_ = retypeScan(scan_msg);
     sv_ = FSM::DatasetUtils::interpolateRanges(sv_);
     sv_ = FSM::Utils::subsampleScan(sv_, SIZE_SCAN);
@@ -575,11 +551,13 @@ FSMLO::scanCallback(const sensor_msgs::LaserScan::Ptr& scan_msg)
   }
   else
   {
-    // Lock
+    /* Lock */
     lock_ = true;
 
-    // Make scan_msg into a vector<double>, remove zero ranges, and subsample
-    // to SIZE_SCAN elements
+    /*
+     * Make scan_msg into a vector<double>, remove zero ranges, and subsample
+     * to SIZE_SCAN elements
+     */
     sr_ = retypeScan(scan_msg);
     sr_ = FSM::DatasetUtils::interpolateRanges(sr_);
     sr_ = FSM::Utils::subsampleScan(sr_, SIZE_SCAN);
@@ -587,35 +565,35 @@ FSMLO::scanCallback(const sensor_msgs::LaserScan::Ptr& scan_msg)
   }
 
 
-  // The reference scan in 2d points
+  /* The reference scan in 2d points */
   std::vector< std::pair<double,double> > vp;
   FSM::Utils::scan2points(sv_, origin, &vp);
 
   FSM::output_params op;
   std::tuple<double,double,double> diff;
 
-  // ---------------------------------------------------------------------------
-  // Do your magic thing
+  /* Do your magic thing */
   FSM::Match::fmtdbh(sr_, origin, vp, r2rp_, c2rp_, ip_, &op,
     &diff);
   ROS_INFO("[%s] FSM executed in %.1f ms", PKG_NAME.c_str(), 1000*op.exec_time);
-  // ---------------------------------------------------------------------------
 
-  // Compute transform
+  /* Compute transform */
   M = FSM::Utils::computeTransform(diff, M);
 
-  // Append resulting pose to the estimated trajectory
+  /* Append resulting pose to the estimated trajectory */
   path_estimate_.push_back(
     std::make_tuple(M(0,2), M(1,2), atan2(M(1,0), M(0,0))));
 
-  // Publish `result_pose` and `path_estimate_`
+  /* Publish `result_pose` and `path_estimate_` */
   publishLO(diff);
 
-  // The sensed scan    sr_ captured at time t (tr_) becomes
-  // the reference scan sv_ captured at time t+1
+  /*
+   * The sensed scan    sr_ captured at time t (tr_) becomes
+   * the reference scan sv_ captured at time t+1
+   */
   sv_ = sr_;
   tv_ = tr_;
 
-  // Unlock
+  /* Unlock */
   lock_ = false;
 }
