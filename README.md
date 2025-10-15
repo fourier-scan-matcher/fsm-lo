@@ -4,7 +4,7 @@
 
 [![ieeexplore.ieee.org](https://img.shields.io/badge/IEEE/RSJ_IROS_2022_paper-00629B)](https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=9981228)
 [![youtube.com](https://img.shields.io/badge/1'_presentation-YouTube-FF0000)](https://www.youtube.com/watch?v=hB4qsHCEXGI)
-[![github.com](https://img.shields.io/badge/pdf_presentation-333333)](https://github.com/phd-li9i/fsm_presentation_iros22/blob/master/main.pdf)
+[![github.com](https://img.shields.io/badge/pdf_presentation-333333)](https://mozilla.github.io/pdf.js/web/viewer.html?file=https://raw.githubusercontent.com/phd-li9i/fsm_presentation_iros22/master/main.pdf)
 
 </div>
 
@@ -51,7 +51,7 @@ Table of Contents
 
 `fsm-lo` is installed, launched, and called via Docker:
 
-- if this is your first time running docker then I happen to find [this](https://youtu.be/SAMPOK_lazw?t=67) docker installation guide very friendly and easy to follow
+- if this is your first time running docker then I happen to find [this docker installation guide](https://youtu.be/SAMPOK_lazw?t=67) very friendly and easy to follow
 - if instead you wish to install and run the package natively then see the [INSTALLATION_DEPRECATED.md](https://github.com/li9i/fsm-lo/blob/master/INSTALLATION_DEPRECATED.md) guide.
 
 ## Installation
