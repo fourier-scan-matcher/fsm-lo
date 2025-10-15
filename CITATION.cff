@@ -1,0 +1,17 @@
+cff-version: 1.2.1
+preferred-citation:
+  title: "FSM: Correspondenceless scan-matching of panoramic 2D range scans"
+  doi: "10.1109/IROS47612.2022.9981228"
+  year: "2022"
+  type: inproceedings
+  conference: "2022 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS)"
+  pages: "6968-6975"
+  url: https://doi.org/10.1109/IROS47612.2022.9981228
+  codeurl: https://github.com/fourier-scan-matcher/fsm-lo
+  authors:
+    - family-names: Filotheou
+      given-names: Alexandros
+    - family-names: Sergiadis
+      given-names: Georgios D.
+    - family-names: Dimitriou
+      given-names: Antonis G.
