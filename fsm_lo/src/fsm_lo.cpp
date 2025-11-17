@@ -33,7 +33,7 @@ FSMLO::FSMLO(ros::NodeHandle nh, ros::NodeHandle nh_private) :
 
   ROS_INFO("[%s] Inititialised.",                             PKG_NAME.c_str());
   ROS_INFO("[%s] To start production of lidar odometry issue",PKG_NAME.c_str());
-  ROS_INFO("%*s rosservice call /fsm_lo/start", (int)(PKG_NAME.size()+2),"");
+  ROS_INFO("%*s rosservice call %s/start", (int)(PKG_NAME.size()+2),"", ros::this_node::getName().c_str());
 }
 
 /*******************************************************************************
@@ -107,29 +107,28 @@ FSMLO::initParams()
   {
     ROS_WARN("[%s] no initial_pose_topic param found; resorting to defaults",
       PKG_NAME.c_str());
-    initial_pose_topic_ = "/fsm_lo/initial_pose";
+    initial_pose_topic_ = ros::this_node::getName() + "/initial_pose";
   }
   /* ------------------------------------------------------------------------ */
   if (!nh_private_.getParam ("pose_estimate_topic", pose_estimate_topic_))
   {
     ROS_WARN("[%s] no pose_estimate_topic param found; resorting to defaults",
       PKG_NAME.c_str());
-    initial_pose_topic_ = "/fsm_lo/pose_estimate";
+    initial_pose_topic_ = ros::this_node::getName() + "/pose_estimate";
   }
   /* ------------------------------------------------------------------------ */
   if (!nh_private_.getParam ("path_estimate_topic", path_estimate_topic_))
   {
     ROS_WARN("[%s] no path_estimate_topic param found; resorting to defaults",
       PKG_NAME.c_str());
-    path_estimate_topic_ = "/fsm_lo/path_estimate";
-
+    path_estimate_topic_ = ros::this_node::getName() + "/path_estimate";
   }
   /* ------------------------------------------------------------------------ */
   if (!nh_private_.getParam ("lo_topic", lo_topic_))
   {
     ROS_WARN("[%s] no lo_topic param found; resorting to defaults",
       PKG_NAME.c_str());
-    lo_topic_ = "/fsm_lo/lo";
+    lo_topic_ = ros::this_node::getName() + "/lo";
   }
   /* ------------------------------------------------------------------------ */
   if (!nh_private_.getParam ("size_scan", int_param))
@@ -240,20 +239,20 @@ FSMLO::initPSS()
   scan_sub_ = nh_.subscribe(scan_topic_, 1, &FSMLO::scanCallback, this);
 
   /* Clearing the estimated trajectory service */
-  clear_trajectory_service_ = nh_.advertiseService(
-    "fsm_lo/clear_estimated_trajectory", &FSMLO::serviceClearTrajectory, this);
+  clear_trajectory_service_ = nh_.advertiseService(ros::this_node::getName() +
+    "/clear_estimated_trajectory", &FSMLO::serviceClearTrajectory, this);
 
   /* Initial pose setting service */
-  set_initial_pose_service_ = nh_.advertiseService(
-    "fsm_lo/set_initial_pose", &FSMLO::serviceInitialPose, this);
+  set_initial_pose_service_ = nh_.advertiseService(ros::this_node::getName() +
+    "/set_initial_pose", &FSMLO::serviceInitialPose, this);
 
   /* Start service */
-  start_service_= nh_.advertiseService(
-    "fsm_lo/start", &FSMLO::serviceStart, this);
+  start_service_= nh_.advertiseService(ros::this_node::getName() +
+    "/start", &FSMLO::serviceStart, this);
 
   /* Stop service */
-  stop_service_= nh_.advertiseService(
-    "fsm_lo/stop", &FSMLO::serviceStop, this);
+  stop_service_= nh_.advertiseService(ros::this_node::getName() +
+    "/stop", &FSMLO::serviceStop, this);
 
   /* fsm's lo publisher */
   lo_pub_ = nh_.advertise<nav_msgs::Odometry>(lo_topic_, 1);
@@ -499,7 +498,8 @@ bool FSMLO::serviceStart(
 {
   ROS_INFO("[%s] lidar odometry is now available.",PKG_NAME.c_str());
   ROS_INFO("[%s] To shut down issue",              PKG_NAME.c_str());
-  ROS_INFO("%*s rosservice call /fsm_lo/stop",  (int)(PKG_NAME.size()+2),"");
+  ROS_INFO("%*s rosservice call %s/stop",  (int)(PKG_NAME.size()+2),"",
+    ros::this_node::getName());
   lock_ = false;
 
   return true;
@@ -514,7 +514,8 @@ bool FSMLO::serviceStop(
 {
   ROS_INFO("[%s] lidar odometry is shut down.",    PKG_NAME.c_str());
   ROS_INFO("[%s] To bring up issue",               PKG_NAME.c_str());
-  ROS_INFO("%*s rosservice call /fsm_lo/start", (int)(PKG_NAME.size()+2),"");
+  ROS_INFO("%*s rosservice call %s/start", (int)(PKG_NAME.size()+2),"",
+    ros::this_node::getName());
   lock_ = true;
 
   return true;

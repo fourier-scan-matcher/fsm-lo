@@ -1,9 +1,8 @@
 <launch>
-
   <arg name="namespace" default="/"/>
 
   <group ns="$(arg namespace)">
-    <node name="fsm_lo_node" pkg="fsm_lo" type="fsm_lo_node" output="screen">
+    <node name="fsm_lo" pkg="fsm_lo" type="fsm_lo_node" output="screen">
       <param name="pkg_name"   type="string" value="FSM_LO" />
       <rosparam command="load" file="$(find fsm_lo)/config/params.yaml" />
     </node>

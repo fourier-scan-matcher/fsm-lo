@@ -37,7 +37,7 @@ Table of Contents
   * [Launch](#launch)
   * [Call](#call)
 * [Nodes](#nodes)
-  * [`fsm_lo_node`](#fsm_lo_node)
+  * [`fsm_lo`](#fsm_lo)
     * [Subscribed topics](#subscribed-topics)
     * [Published topics](#published-topics)
     * [Services offered](#services-offered)
@@ -85,7 +85,7 @@ or, in any case, you may run the image with
 
 ```bash
 docker run -it \
-    --name=fsm_lo_container \
+    --name=fsmlo \
     --net=host \
     --rm \
     li9i/fsm-lo:latest
@@ -96,12 +96,12 @@ docker run -it \
 Launching `fsm` simply makes it go into stand-by mode and does not actually execute anything. To do so simply call the provided service
 
 ```bash
-docker exec -it fsm_lo_container sh -c "source ~/catkin_ws/devel/setup.bash; rosservice call /fsm_lo/start"
+docker exec -it fsmlo sh -c "source ~/catkin_ws/devel/setup.bash; rosservice call /fsm_lo/start"
 ```
 
 ## Nodes
 
-### `fsm_lo_node`
+### `fsm_lo`
 
 #### Subscribed topics
 
@@ -162,8 +162,7 @@ Found in `config/params.yaml`:
 lo_frame_id <- base_frame_id
 ```
 
-in other words `fsm_lo_node` publishes the transform from `/base_laser_link`
-(or equivalent) to the equivalent of `/odom` (in this case `lo_frame_id`)
+in other words `fsm_lo` publishes the transform from `/base_laser_link` (or equivalent) to the equivalent of `/odom` (in this case `lo_frame_id`)
 
 ## Motivation and Under the hood
 
